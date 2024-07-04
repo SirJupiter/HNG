@@ -26,12 +26,17 @@ def hello():
     message = {}
     city = ''
 
-    client_ip = request.remote_addr
+    if "X-Forwarded-For" in request.headers:
+        client_ip = request.headers.getlist('X-Forwarded-For')[0]
+    else:
+        client_ip = request.remote_addr
 
     api_key = "f1184544951945c7abfbc4e04698c89e"
     temp_key = "1ff422a4b69845fdb26132503240307"
 
     api_url = f"https://api.ipgeolocation.io/ipgeo?apiKey={api_key}&ip={client_ip}"
+    # api_url = "https://api.ipgeolocation.io/ipgeo"
+    # api_url = f"https://ipapi.co/{client_ip}/json/"
     response = requests.get(api_url)
 
     if response.status_code == 200:
@@ -43,7 +48,9 @@ def hello():
     else:
         return jsonify({
             "error": "Failed to retrieve location data",
-            "client_ip": f"{client_ip}"
+            "client_ip": f"{client_ip}",
+            "code": response.status_code,
+            "name": name
             }), 400
 
     temp_url = f"https://api.weatherapi.com/v1/current.json?key={temp_key}&q={city}"
@@ -53,7 +60,7 @@ def hello():
         temp_data = temp_response.json()
         temp = temp_data.get("current").get("temp_c")
 
-        message["greeting"] = f"Hello, {name}!, the temperature is {temp} degrees Celcius in {city}"
+        message["greeting"] = f"Hello, {name}!, the temperature is {temp}degrees Celcius in {city}"
     else:
         return jsonify({"error": "Failed to retrieve temperature data"}), 400
 
